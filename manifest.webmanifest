@@ -1,0 +1,16 @@
+{
+  "name": "Inventario de Arbolado",
+  "short_name": "Arbolado",
+  "description": "Toma de datos de campo: estado del arbolado y acciones a realizar",
+  "lang": "es",
+  "start_url": "./index.html#lista",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f8f5",
+  "theme_color": "#2f5d3a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

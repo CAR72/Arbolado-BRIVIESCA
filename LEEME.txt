@@ -1,0 +1,36 @@
+INVENTARIO DE ARBOLADO - app de campo para Android
+==================================================
+
+PUBLICARLA (una sola vez, ~5 minutos, gratis)
+La app necesita estar en una dirección https para que el móvil le deje usar el GPS
+y funcionar sin conexión. La forma más sencilla: GitHub Pages.
+
+ 1. Crea una cuenta en github.com (si no la tienes).
+ 2. Botón "New repository" -> nombre p. ej. "arbolado" -> Public -> Create.
+ 3. "uploading an existing file" -> arrastra TODO el contenido de esta carpeta
+    (index.html, sw.js, manifest.webmanifest, iconos y la carpeta vendor) -> Commit.
+ 4. Settings -> Pages -> Source: "Deploy from a branch", Branch: main / (root) -> Save.
+ 5. En 1-2 minutos estará en:  https://TU-USUARIO.github.io/arbolado/
+
+INSTALARLA EN EL MÓVIL
+ 1. Abre esa dirección en Chrome para Android (con cobertura).
+ 2. Menú ⋮ -> "Añadir a pantalla de inicio" / "Instalar aplicación" (o botón "Instalar").
+ 3. Concede permiso de ubicación y cámara cuando lo pida.
+ Desde ese momento funciona sin cobertura.
+
+USO EN CAMPO
+ - "+ Árbol" abre una ficha (campos de Campos_App_Arbolado_BRIVIESCA.xlsx). "Guardar y nuevo" encadena árboles.
+ - En Ajustes: técnico, proyecto y prefijo del ID (ARB-001, ARB-002...).
+ - GPS: escucha hasta 25 s y se queda con la lectura más precisa. También se puede marcar en el mapa.
+ - Mapa: ortofoto PNOA (IGN) u OSM. Antes de ir a una zona sin cobertura, encuadra la zona
+   y pulsa "Guardar zona sin conexión".
+ - Los datos viven SOLO en el móvil: haz "Crear copia" al final de cada jornada.
+
+EXPORTACIÓN
+ - ZIP con arbolado.csv (columnas en el orden del Excel + coordenadas), arbolado.geojson y fotos/ (ARB-001_1.jpg...).
+ - CSV con ";" y coma decimal (Excel en español). Coordenadas geográficas ETRS89 y UTM (huso 30 por defecto).
+ - El GeoJSON se arrastra directamente a QGIS.
+
+ACTUALIZAR LA APP
+ Sustituye los archivos en GitHub. Los móviles cogen la versión nueva en la segunda apertura con conexión.
+ Si cambias algo, sube también el número de versión en sw.js (arbolado-app-v2 -> v3).
