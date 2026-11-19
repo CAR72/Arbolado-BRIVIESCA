@@ -141,6 +141,7 @@ legend{font-weight:700;color:var(--verde);padding:0 .3rem}
       <div class="sub" style="margin-top:0">Dianas</div><div class="chips" data-chips="diana"></div>
       <div class="sub">Riesgo</div><div class="chips" data-chips="riesgo"></div>
       <div class="sub">Actuación</div><div class="chips" data-chips="actuacion"></div>
+      <div class="sub">Acceso</div><div class="chips"><span class="chip" id="chipLecho">🌊 Actuación desde lecho río</span></div>
       <div id="hPodaBox" style="display:none;margin-top:.6rem"><label class="f">H aprox. de poda / trasmochado (m)</label><input class="i" name="hPoda" type="number" inputmode="decimal" step="any"></div>
     </fieldset>
 
@@ -217,7 +218,7 @@ legend{font-weight:700;color:var(--verde);padding:0 .3rem}
     <p class="hint" id="almacen" style="font-size:.9rem"></p>
     <button class="btn peligro" id="btnBorrarTodo">Borrar todos los datos</button>
   </fieldset>
-  <p class="hint" style="text-align:center">Inventario de Arbolado · v2.0 · funciona sin conexión</p>
+  <p class="hint" style="text-align:center">Inventario de Arbolado · v2.2 · funciona sin conexión</p>
 </main>
 
 <button class="fab" id="fab">+ Árbol</button>
@@ -235,11 +236,11 @@ const OTRA = 'Otra…';
 const ESPECIES = ['Populus alba','Populus nigra','Fraxinus angustifolia','Salix sp','Ulmus sp'];
 const OPT = {
   raiz:['Sin defectos','Levantamiento aceras','Pudriciones','Grietas','Hongos','Cavidades'],
-  fuste:['Sin defectos','Inclinación excesiva','Grietas longitudinales','Madera vista','Insectos perforadores','Respuestas adaptativas'],
+  fuste:['Sin defectos','Inclinación excesiva','Grietas longitudinales','Madera vista','Insectos perforadores','Respuestas adaptativas','Pie múltiple'],
   ramas:['Sin defectos','Bifurcaciones peligrosas','Uniones con corteza incluida','Defoliación','Ramas secas'],
   diana:['Viviendas','Zonas de paseo','Aparcamientos','Varias'],
   riesgo:['Medio','Alto','Muy alto'],
-  actuacion:['Apeo trepa','Apeo plataforma','Poda trepa','Poda plataforma','Refaldeo','Trasmochado']
+  actuacion:['Apeo trepa','Apeo plataforma','Poda trepa','Poda plataforma','Refaldeo','Trasmochado','Eliminación pie múltiple','Selección pies jóvenes','Apeo desde suelo']
 };
 const SINGLE = new Set(['diana','riesgo','actuacion']);
 const EXCLUSIVE = {raiz:'Sin defectos',fuste:'Sin defectos',ramas:'Sin defectos'};
@@ -252,6 +253,7 @@ const $$ = (s,el=document)=>Array.from(el.querySelectorAll(s));
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const hoy = () => { const d=new Date(); return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+const dec = v => String(v).replace('.',',');   // número para mostrar en pantalla (coma decimal)
 const numOrNull = v => { if(v===''||v==null) return null; const n=parseFloat(String(v).replace(',','.')); return isNaN(n)?null:n; };
 function toast(msg,ms=2200){const t=$('#toast');t.textContent=msg;t.classList.add('on');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('on'),ms);}
 function modal(text,buttons){
@@ -322,14 +324,14 @@ function renderList(){
   $$('#stats .stat').forEach(e=>e.onclick=()=>{filtro=e.dataset.f;renderList();});
   let arr=TREES.slice().sort((a,b)=>(b.updated||0)-(a.updated||0));
   if(filtro!=='Todos') arr=arr.filter(t=>t.riesgo===filtro);
-  if(q) arr=arr.filter(t=>[t.codigo,t.especie,t.diana,t.actuacion,t.obs,...(t.raiz||[]),...(t.fuste||[]),...(t.ramas||[])].join(' ').toLowerCase().includes(q));
+  if(q) arr=arr.filter(t=>[t.codigo,t.especie,t.diana,t.actuacion,t.lecho?'lecho río':'',t.obs,...(t.raiz||[]),...(t.fuste||[]),...(t.ramas||[])].join(' ').toLowerCase().includes(q));
   if(!arr.length){ $('#lista').innerHTML=`<div class="empty">${TREES.length?'Ningún árbol coincide con el filtro.':'Aún no hay árboles.<br>Pulsa <b>+ Árbol</b> para empezar.'}</div>`; return; }
   $('#lista').innerHTML = arr.map(t=>{
     const def=[...(t.raiz||[]),...(t.fuste||[]),...(t.ramas||[])].filter(x=>x!=='Sin defectos');
     return `<div class="card" data-id="${t.id}" data-r="${esc(t.riesgo||'')}">
       <div class="t"><span>${esc(t.codigo)} · <i>${esc(t.especie||'Sin especie')}</i></span><span class="badge" data-r="${esc(t.riesgo||'')}">${t.riesgo?'Riesgo '+esc(t.riesgo.toLowerCase()):'Sin riesgo'}</span></div>
-      <div class="s">${t.dap!=null?'DAP '+t.dap+' cm · ':''}${t.altura!=null?'H '+t.altura+' m · ':''}${esc(t.diana||'')}${t.lat!=null?'':' · <b style="color:var(--muyalto)">sin GPS</b>'}${t.fotos?` · 📷 ${t.fotos}`:''}</div>
-      ${t.actuacion?`<div class="s">🛠 ${esc(t.actuacion)}${t.hPoda!=null?' (H ≈ '+t.hPoda+' m)':''}</div>`:''}
+      <div class="s">${t.dap!=null?'DAP '+dec(t.dap)+' cm · ':''}${t.altura!=null?'H '+dec(t.altura)+' m · ':''}${esc(t.diana||'')}${t.lat!=null?'':' · <b style="color:var(--muyalto)">sin GPS</b>'}${t.fotos?` · 📷 ${t.fotos}`:''}</div>
+      ${t.actuacion||t.lecho?`<div class="s">🛠 ${esc(t.actuacion||'')}${t.hPoda!=null?' (H ≈ '+dec(t.hPoda)+' m)':''}${t.lecho?(t.actuacion?' · ':'')+'🌊 desde lecho río':''}</div>`:''}
       ${def.length?`<div class="s">⚠ ${esc(def.join(' · '))}</div>`:''}
     </div>`;}).join('');
   $$('#lista .card').forEach(c=>c.onclick=()=>openForm(c.dataset.id));
@@ -359,6 +361,7 @@ function buildChips(){
       if(name==='actuacion') updateHPoda();
     });
   });
+  $('#chipLecho').onclick=()=>{ $('#chipLecho').classList.toggle('on'); formDirty=true; };
   $('#especieSel').innerHTML='<option value="">— Elegir —</option>'+ESPECIES.map(e=>`<option>${esc(e)}</option>`).join('')+`<option>${OTRA}</option>`;
   $('#especieSel').onchange=()=>{ const o=$('#especieSel').value===OTRA; $('#especieOtraBox').style.display=o?'':'none'; if(o) $('#ficha').elements.especieOtra.focus(); };
 }
@@ -379,7 +382,7 @@ function nextCodigo(){
 }
 function blankTree(){
   return {id:uid(),codigo:nextCodigo(),fecha:hoy(),tecnico:CFG.tecnico,proyecto:CFG.proyecto,lat:null,lon:null,acc:null,
-    especie:'',dap:null,altura:null,raiz:[],fuste:[],ramas:[],diana:'',riesgo:'',actuacion:'',hPoda:null,obs:'',fotos:0,
+    especie:'',dap:null,altura:null,raiz:[],fuste:[],ramas:[],diana:'',riesgo:'',actuacion:'',lecho:false,hPoda:null,obs:'',fotos:0,
     created:Date.now(),updated:Date.now(),isNew:true};
 }
 async function openForm(id){
@@ -396,6 +399,7 @@ async function openForm(id){
   f.elements.especieOtra.value = enLista ? '' : EDIT.especie;
   $('#especieOtraBox').style.display = enLista ? 'none' : '';
   Object.keys(OPT).forEach(k=>setChips(k,EDIT[k]));
+  $('#chipLecho').classList.toggle('on',!!EDIT.lecho);
   updateHPoda(); renderGPS(); renderFotos();
   $('#btnEliminar').style.display=EDIT.isNew?'none':'';
   formDirty=false;
@@ -409,6 +413,7 @@ function readForm(){
   t.especie = f.elements.especieSel.value===OTRA ? f.elements.especieOtra.value.trim() : f.elements.especieSel.value;
   t.dap=numOrNull(f.elements.dap.value); t.altura=numOrNull(f.elements.altura.value);
   Object.keys(OPT).forEach(k=>t[k]=getChips(k));
+  t.lecho=$('#chipLecho').classList.contains('on');
   t.hPoda = CON_H.has(t.actuacion) ? numOrNull(f.elements.hPoda.value) : null;
   t.obs=f.elements.obs.value.trim();
   return t;
@@ -532,7 +537,7 @@ function drawMarkers(){
   if(!map) return; markers.clearLayers();
   TREES.filter(t=>t.lat!=null).forEach(t=>{
     L.circleMarker([t.lat,t.lon],{radius:8,weight:2,color:'#fff',fillColor:RIESGO_COLOR[t.riesgo]||'#78909c',fillOpacity:.95})
-      .bindPopup(`<b>${esc(t.codigo)}</b> · <i>${esc(t.especie||'')}</i><br>${t.riesgo?`<span class="badge" data-r="${esc(t.riesgo)}">Riesgo ${esc(t.riesgo.toLowerCase())}</span><br>`:''}${esc(t.actuacion||'')}${t.hPoda!=null?' (H ≈ '+t.hPoda+' m)':''}<br><button class="btn sm" style="margin-top:.4rem" onclick="openForm('${t.id}')">Abrir ficha</button>`)
+      .bindPopup(`<b>${esc(t.codigo)}</b> · <i>${esc(t.especie||'')}</i><br>${t.riesgo?`<span class="badge" data-r="${esc(t.riesgo)}">Riesgo ${esc(t.riesgo.toLowerCase())}</span><br>`:''}${esc(t.actuacion||'')}${t.hPoda!=null?' (H ≈ '+dec(t.hPoda)+' m)':''}${t.lecho?'<br>🌊 Desde lecho río':''}<br><button class="btn sm" style="margin-top:.4rem" onclick="openForm('${t.id}')">Abrir ficha</button>`)
       .addTo(markers);
   });
   markersDirty=false;
@@ -593,10 +598,10 @@ const fotosTxt = t => Array.from({length:t.fotos||0},(_,i)=>fname(t,i+1)).join('
 const utmOf = t => t.lat==null?null:toUTM(t.lat,t.lon,husoFor(t.lon));
 const ordenados = () => TREES.slice().sort((a,b)=>String(a.codigo).localeCompare(String(b.codigo),'es',{numeric:true}));
 function csvArboles(){
-  const rows=[['ID','Especie','DAP (cm)','Altura (m)','Sistema radicular/cuello','Fuste','Ramas y uniones','Dianas','Riesgo','Actuación','H poda/trasmochado (m)',
+  const rows=[['ID','Especie','DAP (cm)','Altura (m)','Sistema radicular/cuello','Fuste','Ramas y uniones','Dianas','Riesgo','Actuación','H poda/trasmochado (m)','Desde lecho río',
     'Latitud','Longitud','Huso UTM','UTM X','UTM Y','Precisión GPS (m)','Nº fotos','Fotos','Observaciones','Fecha','Técnico','Proyecto']];
   ordenados().forEach(t=>{ const u=utmOf(t);
-    rows.push([t.codigo,t.especie,n2s(t.dap),n2s(t.altura),(t.raiz||[]).join(', '),(t.fuste||[]).join(', '),(t.ramas||[]).join(', '),t.diana,t.riesgo,t.actuacion,n2s(t.hPoda),
+    rows.push([t.codigo,t.especie,n2s(t.dap),n2s(t.altura),(t.raiz||[]).join(', '),(t.fuste||[]).join(', '),(t.ramas||[]).join(', '),t.diana,t.riesgo,t.actuacion,n2s(t.hPoda),t.lecho?'Sí':'',
       n2s(t.lat?.toFixed(7)),n2s(t.lon?.toFixed(7)),u?u.zone:'',u?n2s(u.x.toFixed(2)):'',u?n2s(u.y.toFixed(2)):'',t.acc!=null?Math.round(t.acc):'',t.fotos||0,fotosTxt(t),t.obs,t.fecha,t.tecnico,t.proyecto]);
   });
   return toCSV(rows);
@@ -605,7 +610,7 @@ function geojson(){
   return JSON.stringify({type:'FeatureCollection',name:'arbolado',crs:{type:'name',properties:{name:'urn:ogc:def:crs:OGC:1.3:CRS84'}},
     features:ordenados().filter(t=>t.lat!=null).map(t=>({type:'Feature',geometry:{type:'Point',coordinates:[+t.lon.toFixed(7),+t.lat.toFixed(7)]},
       properties:{id:t.codigo,especie:t.especie,dap_cm:t.dap,altura_m:t.altura,raiz_cuello:(t.raiz||[]).join(', '),fuste:(t.fuste||[]).join(', '),ramas_union:(t.ramas||[]).join(', '),
-        dianas:t.diana,riesgo:t.riesgo,actuacion:t.actuacion,h_poda_m:t.hPoda,precision_m:t.acc!=null?Math.round(t.acc):null,n_fotos:t.fotos||0,
+        dianas:t.diana,riesgo:t.riesgo,actuacion:t.actuacion,h_poda_m:t.hPoda,lecho_rio:t.lecho?'Sí':'',precision_m:t.acc!=null?Math.round(t.acc):null,n_fotos:t.fotos||0,
         foto1:t.fotos?'fotos/'+fname(t,1):'',fotos:fotosTxt(t),observ:t.obs,fecha:t.fecha,tecnico:t.tecnico,proyecto:t.proyecto}}))},null,1);
 }
 function stamp(){ const d=new Date(); const p=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`; }
@@ -620,7 +625,7 @@ async function entregar(blob,name){
   toast('Archivo guardado en Descargas');
 }
 function renderExport(){
-  const nF=TREES.reduce((s,t)=>s+(t.fotos||0),0), sin=TREES.filter(t=>t.lat==null).length, nAct=TREES.filter(t=>t.actuacion).length;
+  const nF=TREES.reduce((s,t)=>s+(t.fotos||0),0), sin=TREES.filter(t=>t.lat==null).length, nAct=TREES.filter(t=>t.actuacion||t.lecho).length;
   $('#expResumen').innerHTML=`<b>${TREES.length}</b> árboles · <b>${nAct}</b> con actuación · <b>${nF}</b> fotos${sin?` · <span class="acc-bad">${sin} sin posición (no saldrán en la capa GeoJSON)</span>`:''}`;
 }
 const guard = fn => async()=>{ if(!TREES.length) return toast('No hay datos que exportar'); try{ await fn(); }catch(e){ console.error(e); toast('Error al exportar: '+e.message,4000); } };
@@ -650,6 +655,12 @@ $('#bkImport').onchange=async e=>{
     const nuevos=d.trees.filter(t=>!TREES.some(x=>x.id===t.id)).length;
     if(!await confirmar(`La copia tiene ${d.trees.length} árboles (${nuevos} nuevos para este móvil). Los que ya existan se sobrescribirán con la versión de la copia. ¿Restaurar?`,'Restaurar')) return;
     for(const t of d.trees) await dbPut('trees',t);
+    // Ajustes de la copia: rellenan los vacíos o por defecto, sin pisar lo ya configurado en este móvil
+    if(d.cfg){
+      const DEF={tecnico:'',proyecto:'',prefijo:'ARB-',huso:'30'};
+      Object.keys(DEF).forEach(k=>{ if(d.cfg[k] && (CFG[k]===''||CFG[k]===DEF[k])) CFG[k]=d.cfg[k]; });
+      saveCfg();
+    }
     for(const p of d.photos){ const b=await (await fetch(p.data)).blob(); await dbPut('photos',{id:p.id,treeId:p.treeId,n:p.n,blob:b}); }
     await loadTrees(); markersDirty=true; toast(`Restaurados ${d.trees.length} árboles`); renderExport();
   }catch(err){ toast('No se pudo restaurar: '+err.message,4000); }

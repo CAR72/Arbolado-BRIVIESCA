@@ -1,5 +1,5 @@
 // Service worker: app disponible sin conexión + caché de teselas de mapa
-const APP = 'arbolado-app-v2';
+const APP = 'arbolado-app-v4';
 const TILES = 'arbolado-tiles-v1';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png',
   './vendor/leaflet.js', './vendor/leaflet.css', './vendor/jszip.min.js',
